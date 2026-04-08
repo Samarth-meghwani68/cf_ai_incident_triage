@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="AI-powered incident triage assistant for software engineers. Analyze logs, stack traces, and errors with structured AI analysis." />
+  <title>Incident Triage AI — Cloudflare-Powered Debugging Assistant</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <!-- ─── Header ─────────────────────────────────────────── -->
+  <header id="app-header">
+    <div class="header-content">
+      <div class="header-brand">
+        <div class="header-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M6 8h12M6 12h10M6 16h6"/>
+            <circle cx="18" cy="16" r="3"/>
+            <path d="M17 16l1 1 2-2"/>
+          </svg>
+        </div>
+        <div>
+          <h1>Incident Triage AI</h1>
+          <p class="header-subtitle">Cloudflare-powered debugging assistant</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="btn-history" class="btn btn-ghost" title="View past cases">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+          <span>History</span>
+        </button>
+        <button id="btn-new-session" class="btn btn-secondary" title="Start fresh session">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>New Session</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="app-main">
+    <!-- ─── Input Section ──────────────────────────────────── -->
+    <section id="section-input" class="section">
+      <div class="section-header">
+        <h2>Analyze an Incident</h2>
+        <p class="section-description">Paste logs, stack traces, error messages, or bug reports for AI-powered triage analysis.</p>
+      </div>
+      <div class="input-container">
+        <textarea
+          id="input-logs"
+          class="input-textarea"
+          placeholder="Paste your logs, stack trace, error message, or incident description here...
+
+Example:
+ERROR 2024-12-01 14:23:01 [api-gateway] Connection pool exhausted
+  at DatabasePool.getConnection (db/pool.js:142)
+  at RequestHandler.execute (handlers/request.js:89)
+  Caused by: TimeoutException: Pool wait exceeded 30s
+  Active connections: 50/50
+  Pending requests: 847"
+          spellcheck="false"
+        ></textarea>
+        <div class="input-footer">
+          <span id="char-count" class="char-count">0 / 15,000</span>
+          <button id="btn-analyze" class="btn btn-primary" disabled>
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span>Analyze</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── Loading State ──────────────────────────────────── -->
+    <section id="section-loading" class="section hidden">
+      <div class="loading-card">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">Analyzing incident data...</p>
+        <p class="loading-subtext">The AI model is reviewing your input for patterns, errors, and potential root causes.</p>
+      </div>
+    </section>
+
+    <!-- ─── Triage Result ──────────────────────────────────── -->
+    <section id="section-result" class="section hidden">
+      <div class="section-header">
+        <h2>Triage Result</h2>
+        <span id="result-badge" class="badge">AI Analysis</span>
+      </div>
+      <div id="triage-card" class="triage-card">
+        <!-- Summary -->
+        <div class="triage-summary" id="triage-summary"></div>
+
+        <!-- Metadata row -->
+        <div class="triage-meta">
+          <div class="meta-item">
+            <span class="meta-label">Severity</span>
+            <span id="triage-severity" class="severity-badge"></span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Issue Type</span>
+            <span id="triage-type" class="type-badge"></span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Confidence</span>
+            <div class="confidence-container">
+              <div class="confidence-bar"><div id="triage-confidence-fill" class="confidence-fill"></div></div>
+              <span id="triage-confidence-text" class="confidence-text"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Likely Causes -->
+        <div class="triage-section">
+          <h3>Likely Causes</h3>
+          <ul id="triage-causes" class="triage-list"></ul>
+        </div>
+
+        <!-- Debugging Steps -->
+        <div class="triage-section">
+          <h3>Recommended Debugging Steps</h3>
+          <ol id="triage-steps" class="triage-list ordered"></ol>
+        </div>
+
+        <!-- Assumptions -->
+        <div class="triage-section">
+          <h3>Assumptions &amp; Unknowns</h3>
+          <ul id="triage-assumptions" class="triage-list muted"></ul>
+        </div>
+      </div>
+
+      <!-- Raw output fallback -->
+      <div id="raw-output-card" class="raw-output-card hidden">
+        <div class="raw-output-header">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>Could not parse structured output. Showing raw AI response:</span>
+        </div>
+        <pre id="raw-output-text" class="raw-output-text"></pre>
+      </div>
+    </section>
+
+    <!-- ─── Chat Section ───────────────────────────────────── -->
+    <section id="section-chat" class="section hidden">
+      <div class="section-header">
+        <h2>Follow-up Chat</h2>
+        <span id="chat-count" class="badge">0 messages</span>
+      </div>
+      <div id="chat-messages" class="chat-messages"></div>
+      <div class="chat-input-container">
+        <input
+          id="input-chat"
+          type="text"
+          class="chat-input"
+          placeholder="Ask a follow-up question about this incident..."
+          maxlength="2000"
+        />
+        <button id="btn-send" class="btn btn-primary btn-send" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9"/></svg>
+        </button>
+      </div>
+      <div class="chat-actions">
+        <button id="btn-report" class="btn btn-accent">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10,9 9,9 8,9"/></svg>
+          <span>Generate Incident Report</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ─── Report Section ─────────────────────────────────── -->
+    <section id="section-report" class="section hidden">
+      <div class="section-header">
+        <h2>Incident Report</h2>
+        <button id="btn-copy-report" class="btn btn-ghost">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          <span>Copy</span>
+        </button>
+      </div>
+      <div id="report-content" class="report-content"></div>
+    </section>
+
+    <!-- ─── History Modal ──────────────────────────────────── -->
+    <div id="modal-history" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Case History</h2>
+          <button id="btn-close-history" class="btn btn-ghost btn-close">&times;</button>
+        </div>
+        <div id="history-list" class="history-list">
+          <p class="empty-state">No past cases found.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Error Toast ────────────────────────────────────── -->
+    <div id="error-toast" class="toast hidden">
+      <div class="toast-content">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        <span id="error-toast-message"></span>
+      </div>
+    </div>
+  </main>
+
+  <footer id="app-footer">
+    <p>Built on <strong>Cloudflare Workers</strong> · Workers AI · Durable Objects · D1</p>
+  </footer>
+
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

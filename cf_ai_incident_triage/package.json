@@ -1,0 +1,21 @@
+{
+  "name": "cf-ai-incident-triage",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI-powered incident triage assistant built on Cloudflare Workers",
+  "scripts": {
+    "dev": "wrangler dev --remote",
+    "dev:local": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create incident-triage-db",
+    "db:migrate:local": "wrangler d1 execute incident-triage-db --local --file=./migrations/0001_initial.sql",
+    "db:migrate:remote": "wrangler d1 execute incident-triage-db --remote --file=./migrations/0001_initial.sql",
+    "typecheck": "tsc --noEmit --project worker/tsconfig.json",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241205.0",
+    "typescript": "^5.7.2",
+    "wrangler": "^3.99.0"
+  }
+}

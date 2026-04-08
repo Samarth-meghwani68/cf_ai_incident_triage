@@ -1,0 +1,36 @@
+# cf_ai_incident_triage — Wrangler Configuration
+name = "cf-ai-incident-triage"
+main = "worker/src/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Static frontend assets
+[assets]
+directory = "./frontend"
+
+# D1 Database
+# Run: wrangler d1 create incident-triage-db
+# Then paste the database_id below
+[[d1_databases]]
+binding = "DB"
+database_name = "incident-triage-db"
+database_id = "YOUR_D1_DATABASE_ID"
+
+# Workers AI
+[ai]
+binding = "AI"
+
+# Durable Objects
+[durable_objects]
+bindings = [
+  { name = "TRIAGE_SESSION", class_name = "TriageSession" }
+]
+
+# DO Migrations
+[[migrations]]
+tag = "v1"
+new_classes = ["TriageSession"]
+
+# Environment variables
+[vars]
+AI_MODEL = "@cf/meta/llama-3.1-8b-instruct"
